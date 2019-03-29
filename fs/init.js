@@ -1,7 +1,5 @@
 load('api_aws.js');
-load('api_azure.js');
 load('api_config.js');
-load('api_dash.js');
 load('api_events.js');
 load('api_gcp.js');
 load('api_gpio.js');
@@ -11,102 +9,82 @@ load('api_timer.js');
 load('api_sys.js');
 load('api_watson.js');
 
-let btn = Cfg.get('board.btn1.pin');              // Built-in button GPIO
-let led = Cfg.get('board.led1.pin');              // Built-in LED GPIO number
-let onhi = Cfg.get('board.led1.active_high');     // LED on when high?
-let state = {on: false, btnCount: 0, uptime: 0};  // Device state
+//let btn = Cfg.get('board.btn1.pin');              // Built-in button GPIO
+let coolPin = 2;              // Built-in LED GPIO number
+let warmPin = 33;
+let state = {
+  warm: false,
+  cool: false,
+  currTemp: 15,
+  desiredTemp: 15,
+  upTime: 0
+};  // Device state
 let online = false;                               // Connected to the cloud?
 
-let setLED = function(on) {
-  let level = onhi ? on : !on;
-  GPIO.write(led, level);
-  print('LED on ->', on);
+
+
+let coolSW = function (cool) {
+  let level = cool ? 0 : 1;
+  GPIO.write(coolPin, level);
+  print('LED1 on ->', cool);
 };
 
-GPIO.set_mode(led, GPIO.MODE_OUTPUT);
-setLED(state.on);
-
-let reportState = function() {
-  Shadow.update(0, state);
+let warmSW = function (warm) {
+  let level = warm ? 0 : 1;
+  GPIO.write(warmPin, level);
+  print('LED2 on ->', warm);
 };
+
+
+GPIO.set_mode(coolPin, GPIO.MODE_OUTPUT);
+GPIO.set_mode(warmPin, GPIO.MODE_OUTPUT);
+
+coolSW(state.cool);
+warmSW(state.warm);
 
 // Update state every second, and report to cloud if online
-Timer.set(1000, Timer.REPEAT, function() {
-  state.uptime = Sys.uptime();
+Timer.set(5000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
-  print('online:', online, JSON.stringify(state));
-  if (online) reportState();
+  state.upTime = Sys.uptime();
+  print("Ciao steeeeeella");
+  MQTT.pub("local/state", JSON.stringify(state), 1, false);
+  
 }, null);
 
+
+MQTT.sub("event/cool", function(conn, topic, msg) {
+  state.cool = (msg === 'true');
+  coolSW(state.cool);
+});
+
+MQTT.sub("event/warm", function(conn, topic, msg) {
+  state.warm = (msg === 'true');
+  warmSW(state.warm);
+});
+
 // Set up Shadow handler to synchronise device state with the shadow state
-Shadow.addHandler(function(event, obj) {
+/*Shadow.addHandler(function (event, obj) {
   if (event === 'UPDATE_DELTA') {
     print('GOT DELTA:', JSON.stringify(obj));
     for (let key in obj) {  // Iterate over all keys in delta
-      if (key === 'on') {   // We know about the 'on' key. Handle it!
-        state.on = obj.on;  // Synchronise the state
-        setLED(state.on);   // according to the delta
-      } else if (key === 'reboot') {
-        state.reboot = obj.reboot;      // Reboot button clicked: that
-        Timer.set(750, 0, function() {  // incremented 'reboot' counter
-          Sys.reboot();                 // Sync and schedule a reboot
-        }, null);
+      if (key === 'cool') {  // We know about the 'on' key. Handle it!
+        state.cool = obj.cool;  // Synchronise the state
+        coolSW(state.cool);   // according to the delta
+      }
+      if (key === 'warm') {  // We know about the 'on' key. Handle it!
+        state.warm = obj.warm;  // Synchronise the state
+        warmSW(state.warm);   // according to the delta
       }
     }
     reportState();  // Report our new state, hopefully clearing delta
   }
 });
 
-if (btn >= 0) {
-  let btnCount = 0;
-  let btnPull, btnEdge;
-  if (Cfg.get('board.btn1.pull_up') ? GPIO.PULL_UP : GPIO.PULL_DOWN) {
-    btnPull = GPIO.PULL_UP;
-    btnEdge = GPIO.INT_EDGE_NEG;
-  } else {
-    btnPull = GPIO.PULL_DOWN;
-    btnEdge = GPIO.INT_EDGE_POS;
-  }
-  GPIO.set_button_handler(btn, btnPull, btnEdge, 20, function() {
-    state.btnCount++;
-    let message = JSON.stringify(state);
-    let sendMQTT = true;
-    if (Azure.isConnected()) {
-      print('== Sending Azure D2C message:', message);
-      Azure.sendD2CMsg('', message);
-      sendMQTT = false;
-    }
-    if (GCP.isConnected()) {
-      print('== Sending GCP event:', message);
-      GCP.sendEvent(message);
-      sendMQTT = false;
-    }
-    if (Watson.isConnected()) {
-      print('== Sending Watson event:', message);
-      Watson.sendEventJSON('ev', {d: state});
-      sendMQTT = false;
-    }
-    if (Dash.isConnected()) {
-      print('== Click!');
-      // TODO: Maybe do something else?
-      sendMQTT = false;
-    }
-    // AWS is handled as plain MQTT since it allows arbitrary topics.
-    if (AWS.isConnected() || (MQTT.isConnected() && sendMQTT)) {
-      let topic = 'devices/' + Cfg.get('device.id') + '/events';
-      print('== Publishing to ' + topic + ':', message);
-      MQTT.pub(topic, message, 0 /* QoS */);
-    } else if (sendMQTT) {
-      print('== Not connected!');
-    }
-  }, null);
-}
-
-Event.on(Event.CLOUD_CONNECTED, function() {
+Event.on(Event.CLOUD_CONNECTED, function () {
   online = true;
-  Shadow.update(0, {ram_total: Sys.total_ram()});
+  Shadow.update(0, { ram_total: Sys.total_ram() });
 }, null);
 
-Event.on(Event.CLOUD_DISCONNECTED, function() {
+Event.on(Event.CLOUD_DISCONNECTED, function () {
   online = false;
-}, null);
+}, null);*/
