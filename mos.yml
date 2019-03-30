@@ -24,3 +24,5 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-config
   - origin: https://github.com/mongoose-os-libs/mqtt
   - origin: https://github.com/mongoose-os-libs/mjs
+  - origin: https://github.com/mongoose-os-libs/bt-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-gatts

@@ -26,13 +26,13 @@ let online = false;                               // Connected to the cloud?
 let coolSW = function (cool) {
   let level = cool ? 0 : 1;
   GPIO.write(coolPin, level);
-  print('LED1 on ->', cool);
+  print('cooling -> ', cool);
 };
 
 let warmSW = function (warm) {
   let level = warm ? 0 : 1;
   GPIO.write(warmPin, level);
-  print('LED2 on ->', warm);
+  print('warming -> ', warm);
 };
 
 GPIO.set_mode(coolPin, GPIO.MODE_OUTPUT);
@@ -65,7 +65,8 @@ Timer.set(2000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
   state.upTime = Sys.uptime();
   print("state advertised.");
-  MQTT.pub("local/state", JSON.stringify(state), 1, false);
+  if(MQTT.isConnected())
+    MQTT.pub("event/state", JSON.stringify(state), 1, false);
   
 }, null);
 
@@ -75,10 +76,12 @@ MQTT.sub("event/desiredTemp", function(conn, topic, msg) {
   updateSW();
 });
 
-MQTT.sub("event/warm", function(conn, topic, msg) {
-  state.warm = (msg === 'true');
-  warmSW(state.warm);
+// Only for DEBUG************************************/
+MQTT.sub("event/getTemp", function(conn, topic, msg) {
+  state.currTemp = JSON.parse(msg);
+  updateSW();
 });
+//***************************************************/
 
 // Set up Shadow handler to synchronise device state with the shadow state
 /*Shadow.addHandler(function (event, obj) {
