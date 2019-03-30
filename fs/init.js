@@ -10,8 +10,8 @@ load('api_sys.js');
 load('api_watson.js');
 
 //let btn = Cfg.get('board.btn1.pin');              // Built-in button GPIO
-let coolPin = 2;              // Built-in LED GPIO number
-let warmPin = 33;
+let coolPin = 26;              // Built-in LED GPIO number
+let warmPin = 25;
 let state = {
   warm: false,
   cool: false,
@@ -35,26 +35,44 @@ let warmSW = function (warm) {
   print('LED2 on ->', warm);
 };
 
-
 GPIO.set_mode(coolPin, GPIO.MODE_OUTPUT);
 GPIO.set_mode(warmPin, GPIO.MODE_OUTPUT);
 
 coolSW(state.cool);
 warmSW(state.warm);
 
+function updateSW() {
+  
+  // HERE: get temp and save in currTemp
+
+  state.cool = false;
+  state.warm = false;
+
+  if (state.currTemp > state.desiredTemp) {
+    state.cool = true;
+  }
+  if (state.currTemp < state.desiredTemp) {
+    state.warm = true;
+  }
+  coolSW(state.cool);
+  warmSW(state.warm);
+}
+
+Timer.set(8000, Timer.REPEAT, updateSW, null);
+
 // Update state every second, and report to cloud if online
-Timer.set(5000, Timer.REPEAT, function () {
+Timer.set(2000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
   state.upTime = Sys.uptime();
-  print("Ciao steeeeeella");
+  print("state advertised.");
   MQTT.pub("local/state", JSON.stringify(state), 1, false);
   
 }, null);
 
 
-MQTT.sub("event/cool", function(conn, topic, msg) {
-  state.cool = (msg === 'true');
-  coolSW(state.cool);
+MQTT.sub("event/desiredTemp", function(conn, topic, msg) {
+  state.desiredTemp = JSON.parse(msg);
+  updateSW();
 });
 
 MQTT.sub("event/warm", function(conn, topic, msg) {
