@@ -37,9 +37,11 @@ let warmSW = function (warm) {
 
 GPIO.set_mode(coolPin, GPIO.MODE_OUTPUT);
 GPIO.set_mode(warmPin, GPIO.MODE_OUTPUT);
+GPIO.set_mode(2, GPIO.MODE_OUTPUT);
 
 coolSW(state.cool);
 warmSW(state.warm);
+GPIO.write(2, 0);
 
 function updateSW() {
   
@@ -81,6 +83,13 @@ MQTT.sub("event/getTemp", function(conn, topic, msg) {
   state.currTemp = JSON.parse(msg);
   updateSW();
 });
+
+MQTT.setEventHandler(function(conn, ev, edata) {
+  if (ev === 202) 
+    GPIO.write(2, 1);
+  else if(ev === 5)
+    GPIO.write(2, 0);
+}, null);
 //***************************************************/
 
 // Set up Shadow handler to synchronise device state with the shadow state
