@@ -8,11 +8,13 @@ load('api_shadow.js');
 load('api_timer.js');
 load('api_sys.js');
 load('api_watson.js');
+load('api_rpc.js');
 
 //let btn = Cfg.get('board.btn1.pin');              // Built-in button GPIO
 let coolPin = 26;              // Built-in LED GPIO number
 let warmPin = 25;
 let state = {
+  id: "esp32",
   warm: false,
   cool: false,
   currTemp: 15,
@@ -21,18 +23,16 @@ let state = {
 };  // Device state
 let online = false;                               // Connected to the cloud?
 
-
+state.id = Cfg.get('device.id');
 
 let coolSW = function (cool) {
   let level = cool ? 0 : 1;
   GPIO.write(coolPin, level);
-  print('cooling -> ', cool);
 };
 
 let warmSW = function (warm) {
   let level = warm ? 0 : 1;
   GPIO.write(warmPin, level);
-  print('warming -> ', warm);
 };
 
 GPIO.set_mode(coolPin, GPIO.MODE_OUTPUT);
@@ -66,10 +66,8 @@ Timer.set(8000, Timer.REPEAT, updateSW, null);
 Timer.set(2000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
   state.upTime = Sys.uptime();
-  print("state advertised.");
-  if(MQTT.isConnected())
+  if(online) 
     MQTT.pub("event/state", JSON.stringify(state), 1, false);
-  
 }, null);
 
 
@@ -85,11 +83,21 @@ MQTT.sub("event/getTemp", function(conn, topic, msg) {
 });
 
 MQTT.setEventHandler(function(conn, ev, edata) {
-  if (ev === 202) 
+  if (ev === 202) {
     GPIO.write(2, 1);
-  else if(ev === 5)
+    online = true;
+  }
+  else if(ev === 5) {
     GPIO.write(2, 0);
+    online = false;
+  }
 }, null);
+
+
+RPC.call(RPC.LOCAL, 'Sys.GetInfo', null, function(resp, ud) {
+  print('Response:', JSON.stringify(resp));
+}, null);
+
 //***************************************************/
 
 // Set up Shadow handler to synchronise device state with the shadow state
