@@ -25,6 +25,9 @@ let online = false;                               // Connected to the cloud?
 
 state.id = Cfg.get('device.id');
 
+let state_topic = state.id + '/event/state';
+let settemp_topic = state.id + '/event/setTemp';
+
 let coolSW = function (cool) {
   let level = cool ? 0 : 1;
   GPIO.write(coolPin, level);
@@ -44,7 +47,7 @@ warmSW(state.warm);
 GPIO.write(2, 0);
 
 function updateSW() {
-  
+
   // HERE: get temp and save in currTemp
 
   state.cool = false;
@@ -60,42 +63,40 @@ function updateSW() {
   warmSW(state.warm);
 }
 
-Timer.set(8000, Timer.REPEAT, updateSW, null);
+Timer.set(15000, Timer.REPEAT, updateSW, null);
 
 // Update state every second, and report to cloud if online
-Timer.set(2000, Timer.REPEAT, function () {
+Timer.set(6000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
   state.upTime = Sys.uptime();
-  if(online) 
-    MQTT.pub("event/state", JSON.stringify(state), 1, false);
+  if (online)
+    MQTT.pub(state_topic, JSON.stringify(state), 1, false);
 }, null);
 
 
-MQTT.sub("event/desiredTemp", function(conn, topic, msg) {
-  state.desiredTemp = JSON.parse(msg);
-  updateSW();
+MQTT.sub(settemp_topic, function (conn, topic, msg) {
+  let temp = JSON.parse(msg);
+  if ((temp > -11) && (temp < 46)) {
+    state.desiredTemp = temp;
+    updateSW();
+  }
 });
 
 // Only for DEBUG************************************/
-MQTT.sub("event/getTemp", function(conn, topic, msg) {
+/*MQTT.sub("event/getTemp", function(conn, topic, msg) {
   state.currTemp = JSON.parse(msg);
   updateSW();
-});
+});*/
 
-MQTT.setEventHandler(function(conn, ev, edata) {
+MQTT.setEventHandler(function (conn, ev, edata) {
   if (ev === 202) {
     GPIO.write(2, 1);
     online = true;
   }
-  else if(ev === 5) {
+  else if (ev === 5) {
     GPIO.write(2, 0);
     online = false;
   }
-}, null);
-
-
-RPC.call(RPC.LOCAL, 'Sys.GetInfo', null, function(resp, ud) {
-  print('Response:', JSON.stringify(resp));
 }, null);
 
 //***************************************************/
