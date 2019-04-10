@@ -20,6 +20,8 @@ let state = {
   warm: false,
   cool: false,
   currTemp: 15,
+  humidity: 39,
+  percTemp: 15,
   desiredTemp: 15,
   upTime: 0
 };  // Device state
@@ -28,7 +30,7 @@ let online = false;                               // Connected to the cloud?
 let myDHT = DHT.create(tempPin, DHT.DHT22);
 
 state.id = Cfg.get('device.id');
-state.currTemp = myDHT.getTemp();
+//{HI} =c_{1}+c_{2}T+c_{3}R+c_{4}TR+c_{5}T^{2}+c_{6}R^{2}+c_{7}T^{2}R+c_{8}TR^{2}+c_{9}T^{2}R^{2}}
 
 let state_topic = state.id + '/event/state';
 let settemp_topic = state.id + '/event/setTemp';
@@ -57,7 +59,18 @@ function updateSW() {
 
   state.cool = false;
   state.warm = false;
+
   state.currTemp = myDHT.getTemp();
+  state.humidity = myDHT.getHumidity();
+  if ((state.humidity > 40) && (state.currTemp > 27)) {
+    state.percTemp = -8.78469475556 + (1.61139411 * state.currTemp) + (2.33854883889 * state.humidity) +
+      (-0.14611605 * state.currTemp * state.humidity) + (-0.012308094 * state.currTemp * state.currTemp) +
+      (-0.0164248277778 * state.humidity * state.humidity) + (0.002211732 * state.currTemp * state.currTemp * state.humidity) +
+      (0.00072546 * state.humidity * state.humidity * state.currTemp) +
+      (-0.000003582 * state.humidity * state.humidity * state.currTemp * state.currTemp);
+  } else {
+    state.percTemp = state.currTemp;
+  }
 
   if (state.currTemp > state.desiredTemp) {
     state.cool = true;
@@ -69,10 +82,10 @@ function updateSW() {
   warmSW(state.warm);
 }
 
-Timer.set(5000, Timer.REPEAT, updateSW, null);
+Timer.set(15000, Timer.REPEAT, updateSW, null);
 
 // Update state every second, and report to cloud if online
-Timer.set(1000, Timer.REPEAT, function () {
+Timer.set(10000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
   state.upTime = Sys.uptime();
   if (online)
