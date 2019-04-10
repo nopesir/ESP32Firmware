@@ -9,10 +9,12 @@ load('api_timer.js');
 load('api_sys.js');
 load('api_watson.js');
 load('api_rpc.js');
+load('api_dht.js');
 
 //let btn = Cfg.get('board.btn1.pin');              // Built-in button GPIO
 let coolPin = 26;              // Built-in LED GPIO number
 let warmPin = 25;
+let tempPin = 18;
 let state = {
   id: "esp32",
   warm: false,
@@ -23,7 +25,10 @@ let state = {
 };  // Device state
 let online = false;                               // Connected to the cloud?
 
+let myDHT = DHT.create(tempPin, DHT.DHT22);
+
 state.id = Cfg.get('device.id');
+state.currTemp = myDHT.getTemp();
 
 let state_topic = state.id + '/event/state';
 let settemp_topic = state.id + '/event/setTemp';
@@ -52,6 +57,7 @@ function updateSW() {
 
   state.cool = false;
   state.warm = false;
+  state.currTemp = myDHT.getTemp();
 
   if (state.currTemp > state.desiredTemp) {
     state.cool = true;
@@ -63,10 +69,10 @@ function updateSW() {
   warmSW(state.warm);
 }
 
-Timer.set(15000, Timer.REPEAT, updateSW, null);
+Timer.set(5000, Timer.REPEAT, updateSW, null);
 
 // Update state every second, and report to cloud if online
-Timer.set(6000, Timer.REPEAT, function () {
+Timer.set(1000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
   state.upTime = Sys.uptime();
   if (online)
