@@ -10,7 +10,7 @@ load('api_sys.js');
 load('api_watson.js');
 load('api_rpc.js');
 load('api_dht.js');
-
+load('api_net.js');
 //let btn = Cfg.get('board.btn1.pin');              // Built-in button GPIO
 let coolPin = 26;              // Built-in LED GPIO number
 let warmPin = 25;
@@ -34,6 +34,21 @@ state.id = Cfg.get('device.id');
 
 let state_topic = state.id + '/event/state';
 let settemp_topic = state.id + '/event/setTemp';
+
+if(Cfg.get('wifi.ap.enable')) {
+  Cfg.set({wifi: {sta: {ssid: 'TISCALI-C9F405', pass: 'C62AA7FC2C', enable: true}}});
+  Cfg.set({wifi: {ap: {enable: false}}});
+  Sys.reboot(0);
+}
+
+
+
+
+Event.addHandler(Net.STATUS_DISCONNECTED, function (ev, evdata, ud) {
+  Sys.reboot(0);  
+}, null);
+
+//mos config-set wifi.sta.ssid=TISCALI-C9F405 wifi.sta.pass=C62AA7FC2C wifi.sta.enable=true wifi.ap.enable=false
 
 let coolSW = function (cool) {
   let level = cool ? 0 : 1;
