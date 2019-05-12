@@ -35,14 +35,10 @@ state.id = Cfg.get('device.id');
 let state_topic = state.id + '/event/state';
 let settemp_topic = state.id + '/event/setTemp';
 
-if(Cfg.get('wifi.ap.enable')) {
-  Cfg.set({wifi: {sta: {ssid: 'TISCALI-C9F405', pass: 'C62AA7FC2C', enable: true}}});
-  Cfg.set({wifi: {ap: {enable: false}}});
+if(!Cfg.get('bt.keep_enabled')) {
+  Cfg.set({bt: {keep_enabled: true}});
   Sys.reboot(0);
 }
-
-
-
 
 Event.addHandler(Net.STATUS_DISCONNECTED, function (ev, evdata, ud) {
   Sys.reboot(0);  
