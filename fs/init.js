@@ -11,21 +11,23 @@ load('api_watson.js');
 load('api_rpc.js');
 load('api_dht.js');
 load('api_net.js');
-//let btn = Cfg.get('board.btn1.pin');              // Built-in button GPIO
-let coolPin = 26;              // Built-in LED GPIO number
+load('api_esp32.js')
+
+let coolPin = 26;
 let warmPin = 25;
 let tempPin = 18;
 let state = {
   id: "esp32",
   warm: false,
   cool: false,
+  enabled: false,
   currTemp: 15,
   humidity: 39,
   percTemp: 15,
   desiredTemp: 15,
   upTime: 0
-};  // Device state
-let online = false;                               // Connected to the cloud?
+};
+let online = false;
 
 let myDHT = DHT.create(tempPin, DHT.DHT22);
 
@@ -34,14 +36,15 @@ state.id = Cfg.get('device.id');
 
 let state_topic = state.id + '/event/state';
 let settemp_topic = state.id + '/event/setTemp';
+let onoff_topic = state.id + '/event/onoff';
 
-if(!Cfg.get('bt.keep_enabled')) {
-  Cfg.set({bt: {keep_enabled: true}});
+if (!Cfg.get('bt.keep_enabled')) {
+  Cfg.set({ bt: { keep_enabled: true } });
   Sys.reboot(0);
 }
 
 Event.addHandler(Net.STATUS_DISCONNECTED, function (ev, evdata, ud) {
-  Sys.reboot(0);  
+  Sys.reboot(0);
 }, null);
 
 //mos config-set wifi.sta.ssid=TISCALI-C9F405 wifi.sta.pass=C62AA7FC2C wifi.sta.enable=true wifi.ap.enable=false
@@ -73,6 +76,8 @@ function updateSW() {
 
   state.currTemp = myDHT.getTemp();
   state.humidity = myDHT.getHumidity();
+
+
   if ((state.humidity > 40) && (state.currTemp > 27)) {
     state.percTemp = -8.78469475556 + (1.61139411 * state.currTemp) + (2.33854883889 * state.humidity) +
       (-0.14611605 * state.currTemp * state.humidity) + (-0.012308094 * state.currTemp * state.currTemp) +
@@ -83,19 +88,22 @@ function updateSW() {
     state.percTemp = state.currTemp;
   }
 
-  if (state.currTemp > state.desiredTemp) {
-    state.cool = true;
-  }
-  if (state.currTemp < state.desiredTemp) {
-    state.warm = true;
+  if (state.enabled) {
+    if (state.currTemp > state.desiredTemp) {
+      state.cool = true;
+    }
+    if (state.currTemp < state.desiredTemp) {
+      state.warm = true;
+    }
   }
   coolSW(state.cool);
   warmSW(state.warm);
+
 }
 
 Timer.set(15000, Timer.REPEAT, updateSW, null);
 
-// Update state every second, and report to cloud if online
+// Update state every 10 second, and report to cloud if online
 Timer.set(10000, Timer.REPEAT, function () {
   state.ram_free = Sys.free_ram();
   state.upTime = Sys.uptime();
@@ -109,6 +117,17 @@ MQTT.sub(settemp_topic, function (conn, topic, msg) {
   if ((temp > -11) && (temp < 46)) {
     state.desiredTemp = temp;
     updateSW();
+  }
+});
+
+MQTT.sub(onoff_topic, function (conn, topic, msg) {
+  if (msg === "on") {
+    state.enabled = true;
+    updateSW();
+  }
+  if (msg === "off") {
+    state.enabled = false;
+    updateSW()
   }
 });
 
