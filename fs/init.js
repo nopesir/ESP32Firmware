@@ -43,8 +43,13 @@ if (!Cfg.get('bt.keep_enabled')) {
   Sys.reboot(0);
 }
 
-Event.addHandler(Net.STATUS_DISCONNECTED, function (ev, evdata, ud) {
+if (Cfg.get('http.enable')) {
+  Cfg.set({ http: { enable: false } });
   Sys.reboot(0);
+}
+
+Event.addHandler(Net.STATUS_DISCONNECTED, function (ev, evdata, ud) {
+  
 }, null);
 
 //mos config-set wifi.sta.ssid=TISCALI-C9F405 wifi.sta.pass=C62AA7FC2C wifi.sta.enable=true wifi.ap.enable=false
