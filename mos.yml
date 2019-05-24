@@ -9,7 +9,10 @@ mongoose_os_version: ${mos.version}
 
 config_schema:
   - ["mqtt.server", "iot.eclipse.org:1883"]
-  - ["i2c.enable", true]
+  - ["mqtt.enable", true]
+  - ["http.enable", false]
+  - ["wifi.ap.enable", false]
+  - ["wifi.sta.enable", true]
 
 tags:
   - js
