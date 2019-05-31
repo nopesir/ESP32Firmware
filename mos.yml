@@ -8,11 +8,12 @@ modules_version: ${mos.version}
 mongoose_os_version: ${mos.version}
 
 config_schema:
-  - ["mqtt.server", "iot.eclipse.org:1883"]
   - ["mqtt.enable", true]
-  - ["http.enable", false]
-  - ["wifi.ap.enable", false]
-  - ["wifi.sta.enable", true]
+  - ["http.enable", true]
+  - ["wifi.ap.enable", true]
+  - ["wifi.sta.enable", false]
+  - ["bt.keep_enabled", false]
+  - ["bt.enable", false]
 
 tags:
   - js
@@ -30,3 +31,4 @@ libs:
   - origin: https://github.com/mongoose-os-libs/bt-service-config
   - origin: https://github.com/mongoose-os-libs/rpc-gatts
   - origin: https://github.com/mongoose-os-libs/dht
+

@@ -13,9 +13,23 @@ load('api_dht.js');
 load('api_net.js');
 load('api_esp32.js')
 
+//let mdns_init = ffi('void mgos_esp_mdns_init(void)');
+
+
 let coolPin = 26;
 let warmPin = 25;
 let tempPin = 18;
+let flag = false;
+let ssid = "SSID";
+let password = "PASSWORD";
+let data = {
+  config: {
+    wifi: {
+      ap: { enable: true },
+      sta: { enable: false}
+    }
+  }
+};
 let state = {
   id: "esp32",
   warm: false,
@@ -32,24 +46,35 @@ let online = false;
 let myDHT = DHT.create(tempPin, DHT.DHT22);
 
 state.id = Cfg.get('device.id');
+ssid = Cfg.get('wifi.sta.ssid');
+
+GPIO.set_mode(2, GPIO.MODE_OUTPUT);
+
 //{HI} =c_{1}+c_{2}T+c_{3}R+c_{4}TR+c_{5}T^{2}+c_{6}R^{2}+c_{7}T^{2}R+c_{8}TR^{2}+c_{9}T^{2}R^{2}}
 
 let state_topic = state.id + '/event/state';
 let settemp_topic = state.id + '/event/setTemp';
 let onoff_topic = state.id + '/event/onoff';
 
-if (!Cfg.get('bt.keep_enabled')) {
-  Cfg.set({ bt: { keep_enabled: true } });
-  Sys.reboot(0);
+if (Cfg.get('wifi.ap.enable')) {
+  GPIO.blink(2, 250, 250);
+} else {
+  GPIO.blink(2, 0, 0)
 }
 
-if (Cfg.get('http.enable')) {
-  Cfg.set({ http: { enable: false } });
-  Sys.reboot(0);
-}
 
-Event.addHandler(Net.STATUS_DISCONNECTED, function (ev, evdata, ud) {
-  
+
+GPIO.set_button_handler(0, GPIO.PULL_UP, GPIO.INT_EDGE_NEG, 200, function (x) {
+  RPC.call(RPC.LOCAL, 'Config.Set', data, function (resp, ud) {
+    RPC.call(RPC.LOCAL, 'Config.Save', { reboot: true }, function (resp, ud) {
+      print('Response:', JSON.stringify(resp));
+    }, null);
+  }, null);
+}, null);
+
+Event.addHandler(Net.STATUS_CONNECTED, function (ev, evdata, ud) {
+  //mdns_init();
+
 }, null);
 
 //mos config-set wifi.sta.ssid=TISCALI-C9F405 wifi.sta.pass=C62AA7FC2C wifi.sta.enable=true wifi.ap.enable=false
@@ -66,7 +91,7 @@ let warmSW = function (warm) {
 
 GPIO.set_mode(coolPin, GPIO.MODE_OUTPUT);
 GPIO.set_mode(warmPin, GPIO.MODE_OUTPUT);
-GPIO.set_mode(2, GPIO.MODE_OUTPUT);
+
 
 coolSW(state.cool);
 warmSW(state.warm);
