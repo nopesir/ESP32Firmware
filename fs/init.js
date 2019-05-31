@@ -26,7 +26,7 @@ let data = {
   config: {
     wifi: {
       ap: { enable: true },
-      sta: { enable: false}
+      sta: { enable: false }
     }
   }
 };
@@ -61,6 +61,12 @@ if (Cfg.get('wifi.ap.enable')) {
 } else {
   GPIO.blink(2, 0, 0)
 }
+
+RPC.call(RPC.LOCAL, 'Config.Set', { config: { mqtt: { will_message: state.id }}}, function (resp, ud) {
+  RPC.call(RPC.LOCAL, 'Config.Save', { reboot: false }, function (resp, ud) {
+    print('Response:', JSON.stringify(resp));
+  }, null);
+}, null);
 
 
 

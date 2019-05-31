@@ -14,6 +14,7 @@ config_schema:
   - ["wifi.sta.enable", false]
   - ["bt.keep_enabled", false]
   - ["bt.enable", false]
+  - ["mqtt.will_topic", "event/offline"]
 
 tags:
   - js
