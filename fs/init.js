@@ -146,7 +146,7 @@ Timer.set(10000, Timer.REPEAT, function () {
   state.timestamp = Timer.now();
   updateSW();
   if (online) {
-    let res = MQTT.pub(state_topic, JSON.stringify(state), 1, false);
+    let res = MQTT.pub(state_topic, JSON.stringify(state), 1, true);
   }
 }, null);
 
