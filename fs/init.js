@@ -143,7 +143,7 @@ function updateSW() {
 
 // Update state every 10 second, and report to cloud if online
 Timer.set(10000, Timer.REPEAT, function () {
-  state.timestamp = Timer.now();
+  state.timestamp = Math.round(Timer.now());
   updateSW();
   if (online) {
     let res = MQTT.pub(state_topic, JSON.stringify(state), 1, true);
