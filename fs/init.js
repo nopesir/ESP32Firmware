@@ -39,7 +39,7 @@ let state = {
   humidity: 39,
   percTemp: 15,
   desiredTemp: 15,
-  upTime: 0
+  timestamp: 0
 };
 let online = false;
 
@@ -55,6 +55,7 @@ GPIO.set_mode(2, GPIO.MODE_OUTPUT);
 let state_topic = state.id + '/event/state';
 let settemp_topic = state.id + '/event/setTemp';
 let onoff_topic = state.id + '/event/onoff';
+let status_topic = state.id + '/event/status';
 
 if (Cfg.get('wifi.ap.enable')) {
   GPIO.blink(2, 250, 250);
@@ -62,13 +63,12 @@ if (Cfg.get('wifi.ap.enable')) {
   GPIO.blink(2, 0, 0)
 }
 
-RPC.call(RPC.LOCAL, 'Config.Set', { config: { mqtt: { will_message: state.id }}}, function (resp, ud) {
+
+RPC.call(RPC.LOCAL, 'Config.Set', { config: { mqtt: { will_topic: status_topic, keep_alive: 30 } } }, function (resp, ud) {
   RPC.call(RPC.LOCAL, 'Config.Save', { reboot: false }, function (resp, ud) {
     print('Response:', JSON.stringify(resp));
   }, null);
 }, null);
-
-
 
 GPIO.set_button_handler(0, GPIO.PULL_UP, GPIO.INT_EDGE_NEG, 200, function (x) {
   RPC.call(RPC.LOCAL, 'Config.Set', data, function (resp, ud) {
@@ -112,7 +112,9 @@ function updateSW() {
 
   state.currTemp = myDHT.getTemp();
   state.humidity = myDHT.getHumidity();
-
+  //state.currTemp = ESP32.temp();
+ 
+  //state.humidity = ESP32.hall();
 
   if ((state.humidity > 40) && (state.currTemp > 27)) {
     state.percTemp = -8.78469475556 + (1.61139411 * state.currTemp) + (2.33854883889 * state.humidity) +
@@ -137,14 +139,15 @@ function updateSW() {
 
 }
 
-Timer.set(15000, Timer.REPEAT, updateSW, null);
+//Timer.set(5000, Timer.REPEAT, updateSW, null);
 
 // Update state every 10 second, and report to cloud if online
 Timer.set(10000, Timer.REPEAT, function () {
-  state.ram_free = Sys.free_ram();
-  state.upTime = Sys.uptime();
-  if (online)
-    MQTT.pub(state_topic, JSON.stringify(state), 1, false);
+  state.timestamp = Timer.now();
+  updateSW();
+  if (online) {
+    let res = MQTT.pub(state_topic, JSON.stringify(state), 1, false);
+  }
 }, null);
 
 
@@ -177,6 +180,9 @@ MQTT.setEventHandler(function (conn, ev, edata) {
   if (ev === 202) {
     GPIO.write(2, 1);
     online = true;
+    MQTT.pub(status_topic, "online", 1, true);
+    updateSW();
+
   }
   else if (ev === 5) {
     GPIO.write(2, 0);
