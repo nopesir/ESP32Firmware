@@ -105,7 +105,7 @@ function updateSW() {
   state.cool = false;
   state.warm = false;
 
-  state.currTemp = myDHT.getTemp();
+  state.currTemp = Math.round(myDHT.getTemp()*2)/2;
   state.humidity = myDHT.getHumidity();
 
   if ((state.humidity > 40) && (state.currTemp > 27)) {

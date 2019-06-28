@@ -17,6 +17,7 @@ config_schema:
   - ["mqtt.will_message", "offline"]
   - ["mqtt.will_retain", true]
   - ["mqtt.keep_alive", 5]
+  - ["mqtt.port", 1882]
 
 tags:
   - js
