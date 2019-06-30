@@ -139,6 +139,7 @@ Timer.set(10000, Timer.REPEAT, function () {
   updateSW();
   if (online) {
     let res = MQTT.pub(state_topic, JSON.stringify(state), 1, true);
+    MQTT.pub(status_topic, "online", 1, true);
   }
 }, null);
 
@@ -148,24 +149,25 @@ MQTT.sub(general_topic, function (conn, topic, msg) {
     let temp = JSON.parse(msg);
     if ((temp > -11) && (temp < 46)) {
       state.desiredTemp = temp;
+      updateSW();
     }
   }
   else if (("" + topic) === ("" + onoff_topic)) {
     if (msg === "on") {
       state.enabled = true;
+      updateSW();
     }
-    if (msg === "off") {
+    else if (msg === "off") {
       state.enabled = false;
+      updateSW();
     }
+    
   }
   else if (("" + topic) === ("" + setname_topic)) {
     state.name = "" + msg;
+    updateSW();
   }
-  else if (("" + topic) !== ("" + state_topic)) {
-    print("" + topic + " not vaid!");
-  }
-
-  updateSW();
+  
 });
 
 
