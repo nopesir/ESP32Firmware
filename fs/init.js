@@ -106,7 +106,14 @@ function updateSW() {
   state.warm = false;
 
   state.currTemp = Math.round(myDHT.getTemp()*2)/2;
-  state.humidity = myDHT.getHumidity();
+  state.humidity = Math.round(myDHT.getHumidity());
+
+  if(state.currTemp > 60) {
+    state.currTemp = 60;
+  }
+  if (state.humidity > 100) {
+    state.humidity = 100;
+  }
 
   if ((state.humidity > 40) && (state.currTemp > 27)) {
     state.percTemp = -8.78469475556 + (1.61139411 * state.currTemp) + (2.33854883889 * state.humidity) +
@@ -114,8 +121,13 @@ function updateSW() {
       (-0.0164248277778 * state.humidity * state.humidity) + (0.002211732 * state.currTemp * state.currTemp * state.humidity) +
       (0.00072546 * state.humidity * state.humidity * state.currTemp) +
       (-0.000003582 * state.humidity * state.humidity * state.currTemp * state.currTemp);
+    state.percTemp = Math.round(state.percTemp * 2)/2;
   } else {
     state.percTemp = state.currTemp;
+  }
+
+  if (state.percTemp > 80) {
+    state.percTemp = 89;
   }
 
   if (state.enabled) {
@@ -134,7 +146,7 @@ function updateSW() {
 //Timer.set(5000, Timer.REPEAT, updateSW, null);
 
 // Update state every 10 second, and report to cloud if online
-Timer.set(10000, Timer.REPEAT, function () {
+Timer.set(20000, Timer.REPEAT, function () {
   state.timestamp = Math.round(Timer.now());
   updateSW();
   if (online) {
