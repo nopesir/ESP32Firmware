@@ -9,6 +9,7 @@ mongoose_os_version: ${mos.version}
 
 config_schema:
   - ["mqtt.enable", true]
+  - ["mqtt1.enable", true]
   - ["http.enable", true]
   - ["wifi.ap.enable", true]
   - ["wifi.sta.enable", false]
@@ -16,8 +17,18 @@ config_schema:
   - ["bt.enable", false]
   - ["mqtt.will_message", "offline"]
   - ["mqtt.will_retain", true]
-  - ["mqtt.keep_alive", 5]
+  - ["mqtt.keep_alive", 45]
   - ["mqtt.port", 1882]
+  - ["mqtt1.will_message", "offline"]
+  - ["mqtt1.server", "192.168.11.1"]
+  - ["mqtt1.will_retain", true]
+  - ["mqtt1.keep_alive", 45]
+  - ["mqtt1.port", 1882]
+  - ["wifi.sta1.enable", false]
+  - ["sta.sta_connect_timeout", 30]
+  - ["wifi.sta1.ssid", "thermoSYS"]
+  - ["wifi.sta1.pass", "password"]
+  - ["wifi.sta1.enable", true]
 
 tags:
   - js

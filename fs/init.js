@@ -26,6 +26,7 @@ let data = {
   config: {
     wifi: {
       ap: { enable: true },
+      sta1: { enable: false },
       sta: { enable: false }
     }
   }
@@ -43,7 +44,7 @@ let state = {
   timestamp: 0
 };
 
-if (Cfg.get('wifi.ap.enable')) {
+if (Cfg.get('wifi.ap.enable') && !Cfg.get('wifi.sta.enable')) {
   GPIO.blink(2, 250, 250);
 } else {
   GPIO.blink(2, 0, 0)
@@ -66,7 +67,7 @@ let general_topic = state.id + '/event/+';
 
 
 
-RPC.call(RPC.LOCAL, 'Config.Set', { config: { mqtt: { will_topic: status_topic, keep_alive: 30 } } }, function (resp, ud) {
+RPC.call(RPC.LOCAL, 'Config.Set', { config: { mqtt: { will_topic: status_topic, keep_alive: 30 }, mqtt1: { will_topic: status_topic, keep_alive: 30 } } }, function (resp, ud) {
   RPC.call(RPC.LOCAL, 'Config.Save', { reboot: false }, function (resp, ud) {
     print('Response:', JSON.stringify(resp));
   }, null);
@@ -185,6 +186,7 @@ MQTT.sub(general_topic, function (conn, topic, msg) {
 
 MQTT.setEventHandler(function (conn, ev, edata) {
   if (ev === 202) {
+    GPIO.blink(2, 0, 0)
     GPIO.write(2, 1);
     online = true;
     MQTT.pub(status_topic, "online", 1, true);
@@ -192,6 +194,7 @@ MQTT.setEventHandler(function (conn, ev, edata) {
 
   }
   else if (ev === 5) {
+    GPIO.blink(2, 0, 0)
     GPIO.write(2, 0);
     online = false;
     state.enabled = false;
