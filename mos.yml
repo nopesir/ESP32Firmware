@@ -17,6 +17,8 @@ config_schema:
   - ["bt.enable", false]
   - ["mqtt.will_message", "offline"]
   - ["mqtt.will_retain", true]
+  - ["mqtt1.reconnect_timeout_max", 30]
+  - ["mqtt.reconnect_timeout_max", 30]
   - ["mqtt.keep_alive", 45]
   - ["mqtt.port", 1882]
   - ["mqtt1.will_message", "offline"]

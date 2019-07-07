@@ -67,7 +67,7 @@ let general_topic = state.id + '/event/+';
 
 
 
-RPC.call(RPC.LOCAL, 'Config.Set', { config: { mqtt: { will_topic: status_topic, keep_alive: 30 }, mqtt1: { will_topic: status_topic, keep_alive: 30 } } }, function (resp, ud) {
+RPC.call(RPC.LOCAL, 'Config.Set', { config: { wifi: {sta1: {enable: true}}, mqtt: { will_topic: status_topic, keep_alive: 30 }, mqtt1: { will_topic: status_topic, keep_alive: 30 } } }, function (resp, ud) {
   RPC.call(RPC.LOCAL, 'Config.Save', { reboot: false }, function (resp, ud) {
     print('Response:', JSON.stringify(resp));
   }, null);
