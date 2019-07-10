@@ -147,7 +147,7 @@ function updateSW() {
 //Timer.set(5000, Timer.REPEAT, updateSW, null);
 
 // Update state every 10 second, and report to cloud if online
-Timer.set(20000, Timer.REPEAT, function () {
+Timer.set(5000, Timer.REPEAT, function () {
   state.timestamp = Math.round(Timer.now());
   updateSW();
   if (online) {
